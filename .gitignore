@@ -1,0 +1,7 @@
+.vscode
+
+# Rust objects
+/target
+
+# Docker database volume
+/db-volumes

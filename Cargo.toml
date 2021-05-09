@@ -1,0 +1,9 @@
+[package]
+name = "autostocklist"
+version = "1.0.0"
+authors = ["Iván Cea Fontenla <ivancea96@outlook.com>"]
+edition = "2018"
+
+[dependencies]
+actix-web = "3"
+scylla = "0.1.0"
