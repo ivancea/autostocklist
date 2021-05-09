@@ -5,5 +5,8 @@ authors = ["Iván Cea Fontenla <ivancea96@outlook.com>"]
 edition = "2018"
 
 [dependencies]
-actix-web = "3"
+actix-web = "^4.0.0-beta.6"
 scylla = "0.1.0"
+chrono = ""
+log = ""
+env_logger = ""

@@ -5,9 +5,20 @@ CREATE TABLE stock.stock_movements (
     user int,
     item int,
     date date,
-    change int,
+    difference counter,
     PRIMARY KEY (user, item, date)
 );
 
-INSERT INTO stock.stock_movements (user, item, date, change)
-    VALUES (1, 1, '2021-05-08', -4);
+
+UPDATE stock.stock_movements
+SET difference = difference - 2
+WHERE user = 1
+  AND item = 1
+  AND date = '2021-05-08';
+
+
+SELECT *
+FROM stock.stock_movements
+WHERE user = 1
+  AND item = 1
+  AND date = '2021-05-08'

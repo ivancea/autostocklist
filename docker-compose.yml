@@ -1,6 +1,15 @@
 version: '3'
 
 services:
+  web:
+    build: .
+    ports:
+      - "8080:8080"
+    depends_on:
+      - db1
+      - db2
+      - db3
+
   db-web:
     build: tools/cassandra-web
     ports:
@@ -11,24 +20,30 @@ services:
       - db1
       - db2
       - db3
+
   db1:
     image: scylladb/scylla
     command: --seeds=db1,db2
     ports:
       - "19042:9042"
     volumes:
-      - ./db-volumes/1:/var/lib/scylla
+      - db-volume-1:/var/lib/scylla
   db2:
     image: scylladb/scylla
     command: --seeds=db1,db2
     depends_on:
       - db1
     volumes:
-      - ./db-volumes/2:/var/lib/scylla
+      - db-volume-2:/var/lib/scylla
   db3:
     image: scylladb/scylla
     command: --seeds=db1,db2
     depends_on:
       - db1
     volumes:
-      - ./db-volumes/3:/var/lib/scylla
+      - db-volume-3:/var/lib/scylla
+
+volumes:
+  db-volume-1:
+  db-volume-2:
+  db-volume-3:
