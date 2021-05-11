@@ -249,8 +249,10 @@ dependencies = [
  "actix-web",
  "chrono",
  "env_logger",
+ "itertools",
  "log",
  "scylla",
+ "tokio-retry",
 ]
 
 [[package]]
@@ -1556,6 +1558,17 @@ dependencies = [
  "proc-macro2",
  "quote",
  "syn",
+]
+
+[[package]]
+name = "tokio-retry"
+version = "0.3.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "7f57eb36ecbe0fc510036adff84824dd3c24bb781e21bfa67b69d556aa85214f"
+dependencies = [
+ "pin-project",
+ "rand 0.8.3",
+ "tokio",
 ]
 
 [[package]]

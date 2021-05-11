@@ -1,71 +1,64 @@
-use std::error::Error;
-use chrono::NaiveDate;
-use env_logger::Env;
-use log::info;
-use actix_web::{HttpResponse, middleware};
-use actix_web::{get, web, App, HttpServer, Responder};
-use scylla::{batch::Consistency, SessionBuilder};
+mod database;
 
-#[get("/{user}/{item}/{year}/{month}/{day}/{difference}")]
-async fn index(path: web::Path<(i32, i32, i32, u32, u32, i32)>) -> impl Responder {
-    let (user, item, year, month, day, difference) = path.into_inner();
+use actix_web::{
+    get,
+    web::{self, Data},
+    App, HttpServer, Responder,
+};
+use actix_web::{middleware, HttpResponse};
+use chrono::NaiveDate;
+use database::Database;
+use env_logger::Env;
+use itertools::Itertools;
+use log::info;
+use std::{env, sync::Mutex};
+use tokio_retry::strategy::FibonacciBackoff;
+use tokio_retry::Retry;
+
+#[get("/{user}/{item}/{year}/{month}/{day}/{amount}")]
+async fn index(
+    path: web::Path<(u32, u32, i32, u32, u32, u32)>,
+    database: web::Data<Mutex<Database>>,
+) -> impl Responder {
+    let (user, item, year, month, day, amount) = path.into_inner();
     let date = NaiveDate::from_ymd(year, month, day);
 
-    match insert(user, item, &date, difference).await {
+    match database
+        .lock()
+        .unwrap()
+        .reduce_stock(user, item, &date, amount)
+        .await
+    {
         Ok(_) => HttpResponse::Ok().body(""),
         Err(e) => HttpResponse::InternalServerError().body(format!("Error: {}", e.to_string())),
     }
 }
 
-async fn insert(
-    user: i32,
-    item: i32,
-    date: &NaiveDate,
-    difference: i32,
-) -> Result<(), Box<dyn Error>> {
-    let session = SessionBuilder::new()
-        .known_node("db1:9042")
-        .known_node("db2:9042")
-        .known_node("db3:9042")
-        .build()
-        .await?;
-
-    let mut prepared = session
-        .prepare(
-            r#"
-            UPDATE stock.stock_movements
-            SET difference = difference + ?
-            WHERE user = ?
-              AND item = ?
-              AND date = ?;
-        "#,
-        )
-        .await?;
-
-    prepared.set_consistency(Consistency::Quorum);
-
-    session
-        .execute(&prepared, (difference, user, item, date))
-        .await?;
-
-    Ok(())
-}
-
-#[get("/")]
-async fn test() -> impl Responder {
-    "Test"
-}
-
 #[actix_web::main]
 async fn main() -> std::io::Result<()> {
     env_logger::Builder::from_env(Env::default().default_filter_or("debug")).init();
+
+    let scylla_hosts_value = env::var("SCYLLA_HOSTS").expect("SCYLLA_HOSTS must be set");
+    let scylla_hosts = scylla_hosts_value.split(",").collect_vec();
+
+    info!("Initializing services");
+    let database = Retry::spawn(FibonacciBackoff::from_millis(5_000).take(5), || async {
+        info!("Connecting to database");
+        Database::new(&scylla_hosts[..])
+            .await
+            .map(Mutex::new)
+            .map(Data::new)
+    })
+    .await
+    .expect("Error connecting to database");
+
     info!("Starting server");
 
-    HttpServer::new(|| {
+    HttpServer::new(move || {
         App::new()
+            .app_data(database.clone())
             .wrap(middleware::Logger::default())
             .service(index)
-            .service(test)
     })
     .bind(("0.0.0.0", 8080))?
     .run()
