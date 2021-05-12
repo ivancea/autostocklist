@@ -5,6 +5,7 @@ use actix_web::{
     web::{self, Data},
     App, HttpServer, Responder,
 };
+use dotenv::dotenv;
 use actix_web::{middleware, HttpResponse};
 use chrono::NaiveDate;
 use database::Database;
@@ -36,6 +37,7 @@ async fn index(
 
 #[actix_web::main]
 async fn main() -> std::io::Result<()> {
+    dotenv().ok();
     env_logger::Builder::from_env(Env::default().default_filter_or("debug")).init();
 
     let scylla_hosts_value = env::var("SCYLLA_HOSTS").expect("SCYLLA_HOSTS must be set");
