@@ -6,50 +6,20 @@ services:
     ports:
       - "8080:8080"
     environment:
-      SCYLLA_HOSTS: db1:9042,db2:9042,db3:9042
+      DB_HOST: db
+      DB_DATABASE: db
+      DB_USER: postgres
+      DB_PASSWORD: postgres-password
     depends_on:
-      - db1
-      - db2
-      - db3
+      - db
 
-  db-web:
-    build: tools/cassandra-web
+  db:
+    image: postgres
     ports:
-      - "8081:3000"
+      - "5432:5432"
     environment:
-      HOSTS: db1,db2,db3
-    depends_on:
-      - db1
-      - db2
-      - db3
-
-  db1:
-    image: scylladb/scylla:4.5.rc1
-    command: --seeds=db1,db2
-    ports:
-      - "19042:9042"
+      POSTGRES_DB: db
+      POSTGRES_PASSWORD: postgres-password
     volumes:
-      - db-volume-1:/var/lib/scylla
-  db2:
-    image: scylladb/scylla:4.5.rc1
-    command: --seeds=db1,db2
-    ports:
-      - "29042:9042"
-    depends_on:
-      - db1
-    volumes:
-      - db-volume-2:/var/lib/scylla
-  db3:
-    image: scylladb/scylla:4.5.rc1
-    command: --seeds=db1,db2
-    ports:
-      - "39042:9042"
-    depends_on:
-      - db1
-    volumes:
-      - db-volume-3:/var/lib/scylla
-
-volumes:
-  db-volume-1:
-  db-volume-2:
-  db-volume-3:
+      - "./database/scripts:/docker-entrypoint-initdb.d"
+      - "./database/data:/var/lib/postgresql/data"

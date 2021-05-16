@@ -5,11 +5,17 @@ authors = ["Iván Cea Fontenla <ivancea96@outlook.com>"]
 edition = "2018"
 
 [dependencies]
+# Web
 actix-web = "^4.0.0-beta.6"
-scylla = "0.1.0"
+
+# Database
+r2d2 = ""
+r2d2_postgres = ""
+postgres = { version = "", features = ["with-chrono-0_4"] }
+
+# Other
+dotenv = ""
+env_logger = ""
 chrono = ""
 log = ""
-env_logger = ""
 itertools = ""
-tokio-retry = ""
-dotenv = ""
