@@ -1,31 +1,22 @@
-CREATE TABLE users_data (
-	id INTEGER NOT NULL PRIMARY KEY GENERATED ALWAYS AS IDENTITY,
-	email TEXT NOT NULL UNIQUE
-);
-
-CREATE TABLE stock_list (
-	id INTEGER NOT NULL PRIMARY KEY GENERATED ALWAYS AS IDENTITY,
-    user_id INTEGER NOT NULL,
-	name TEXT NOT NULL,
-    
-    CONSTRAINT fk_user FOREIGN KEY (user_id) REFERENCES users_data(id)
-);
-
-CREATE TABLE stock_items (
+CREATE TABLE stock_item (
     id INTEGER NOT NULL PRIMARY KEY GENERATED ALWAYS AS IDENTITY,
-    list_id INTEGER NOT NULL,
     name TEXT NOT NULL,
     min_stock INTEGER CHECK (min_stock >= 0 OR min_stock IS NULL),
-    max_stock INTEGER CHECK (max_stock > min_stock OR max_stock IS NULL),
-    
-    CONSTRAINT fk_list FOREIGN KEY (list_id) REFERENCES stock_list(id)
+    max_stock INTEGER CHECK (max_stock > min_stock OR max_stock IS NULL)
 );
 
-CREATE TABLE stock_movements (
+CREATE TABLE stock_movement (
     item_id INTEGER NOT NULL,
     date DATE NOT NULL,
-    quantity INTEGER NOT NULL CHECK (quantity > 0),
+    quantity INTEGER NOT NULL,
     
     PRIMARY KEY (item_id, date),
-    CONSTRAINT fk_item FOREIGN KEY (item_id) REFERENCES stock_items(id)
+    CONSTRAINT fk_item FOREIGN KEY (item_id) REFERENCES stock_item(id)
 );
+
+CREATE VIEW stock_total AS
+    SELECT i.id AS item_id, SUM(COALESCE(m.quantity, 0)) AS stock, MAX(m.date) as last_movement_date
+    FROM stock_item i
+    LEFT JOIN stock_movement m
+        ON i.id = m.item_id
+    GROUP BY i.id;

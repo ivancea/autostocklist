@@ -6,16 +6,18 @@ edition = "2018"
 
 [dependencies]
 # Web
-actix-web = "^4.0.0-beta.6"
+actix-web = "^4.0.0-beta.9"
 
 # Database
-r2d2 = ""
-r2d2_postgres = ""
-postgres = { version = "", features = ["with-chrono-0_4"] }
+# Connection pool for PostgreSQL
+deadpool-postgres = "^0"
+
+postgres = { version = "^0", features = ["with-chrono-0_4"] }
 
 # Other
-dotenv = ""
-env_logger = ""
-chrono = ""
-log = ""
-itertools = ""
+serde = { version = "^1", features = ["derive"] }
+dotenv = "^0"
+env_logger = "^0"
+chrono = "^0"
+log = "^0"
+itertools = "^0"

@@ -4,22 +4,40 @@ use actix_web::{get, web, App, HttpServer, Responder};
 use actix_web::{middleware, HttpResponse};
 use chrono::NaiveDate;
 use database::Database;
+use database::error::Kind;
 use dotenv::dotenv;
 use env_logger::Env;
 use log::info;
 use std::env;
 
-#[get("/{item}/{year}/{month}/{day}/{quantity}")]
-async fn index(
+
+#[get("/{item_id}/{year}/{month}/{day}/{quantity}")]
+async fn update_stock(
     path: web::Path<(i32, i32, u32, u32, i32)>,
     database: web::Data<Database>,
 ) -> impl Responder {
-    let (item, year, month, day, quantity) = path.into_inner();
+    let (item_id, year, month, day, quantity) = path.into_inner();
     let date = NaiveDate::from_ymd(year, month, day);
 
-    match database.reduce_stock(item, date, quantity).await {
+    match database.reduce_stock(item_id, date, quantity).await {
         Ok(_) => HttpResponse::Ok().body(""),
         Err(e) => HttpResponse::InternalServerError().body(format!("Error: {}", e)),
+    }
+}
+
+#[get("/{item_id}")]
+async fn get_item(
+    path: web::Path<i32>,
+    database: web::Data<Database>,
+) -> impl Responder {
+    let item_id = path.into_inner();
+
+    match database.get_item(item_id).await {
+        Ok(item) => HttpResponse::Ok().json(item),
+        Err(e) => match e.0 {
+            Kind::ItemNotFound => HttpResponse::NotFound().body("Item not found"),
+            _ => HttpResponse::InternalServerError().body(format!("Error: {}", e))
+        },
     }
 }
 
@@ -34,9 +52,10 @@ async fn main() -> std::io::Result<()> {
     info!("Starting server");
     HttpServer::new(move || {
         App::new()
-            .data(database.clone())
+            .app_data(web::Data::new(database.clone()))
             .wrap(middleware::Logger::default())
-            .service(index)
+            .service(update_stock)
+            .service(get_item)
     })
     .bind(("0.0.0.0", 8080))?
     .run()
@@ -53,7 +72,6 @@ async fn initialize_database() -> Database {
     let db_password = env::var("DB_PASSWORD").expect("DB_PASSWORD must be set");
 
     info!("Connecting to database");
-    Database::new(&db_host, db_port, &db_database, &db_user, &db_password)
-        .await
+    Database::new(&db_host, db_port, &db_database, &db_user, &db_password).await
         .expect("Error connecting to database")
 }

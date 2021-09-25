@@ -1,9 +1,12 @@
 use std::fmt::Display;
 
+use deadpool_postgres::{PoolError, config::ConfigError};
+
 #[derive(Debug, Clone, Copy)]
 pub enum Kind {
     Connection,
     Query,
+    ItemNotFound,
 }
 
 #[derive(Debug)]
@@ -24,6 +27,7 @@ impl Display for Error {
         match &self.0 {
             Kind::Connection => write!(f, "Connection error")?,
             Kind::Query => write!(f, "Query execution error")?,
+            Kind::ItemNotFound => write!(f, "Item not found")?,
         };
 
         if let Some(ref cause) = self.2 {
@@ -34,8 +38,20 @@ impl Display for Error {
     }
 }
 
-impl From<r2d2::Error> for Error {
-    fn from(error: r2d2::Error) -> Self {
+impl From<ConfigError> for Error {
+    fn from(error: ConfigError) -> Self {
+        Error(Kind::Connection, "Configuration error".to_owned(), Some(Box::new(error)))
+    }
+}
+
+impl From<PoolError> for Error {
+    fn from(error: PoolError) -> Self {
+        Error(Kind::Connection, "Pool error".to_owned(), Some(Box::new(error)))
+    }
+}
+
+impl From<postgres::Error> for Error {
+    fn from(error: postgres::Error) -> Self {
         Error(Kind::Connection, "".to_owned(), Some(Box::new(error)))
     }
 }
