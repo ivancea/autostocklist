@@ -5,18 +5,31 @@ CREATE TABLE stock_item (
     max_stock INTEGER CHECK (max_stock > min_stock OR max_stock IS NULL)
 );
 
-CREATE TABLE stock_movement (
+CREATE TABLE stock_loss (
     item_id INTEGER NOT NULL,
     date DATE NOT NULL,
-    quantity INTEGER NOT NULL,
+    quantity INTEGER NOT NULL CHECK (quantity >= 0),
+    
+    PRIMARY KEY (item_id, date),
+    CONSTRAINT fk_item FOREIGN KEY (item_id) REFERENCES stock_item(id)
+);
+
+CREATE TABLE stock_resupply (
+    item_id INTEGER NOT NULL,
+    date DATE NOT NULL,
+    quantity INTEGER NOT NULL CHECK (quantity >= 0),
     
     PRIMARY KEY (item_id, date),
     CONSTRAINT fk_item FOREIGN KEY (item_id) REFERENCES stock_item(id)
 );
 
 CREATE VIEW stock_total AS
-    SELECT i.id AS item_id, SUM(COALESCE(m.quantity, 0)) AS stock, MAX(m.date) as last_movement_date
+    SELECT i.id AS item_id, SUM(COALESCE(m.quantity, 0)) AS stock
     FROM stock_item i
-    LEFT JOIN stock_movement m
+    LEFT JOIN (
+        SELECT item_id, -quantity AS quantity FROM stock_loss
+        UNION
+        SELECT item_id, quantity FROM stock_resupply
+    ) m
         ON i.id = m.item_id
     GROUP BY i.id;

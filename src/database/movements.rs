@@ -27,7 +27,7 @@ impl Database {
             .execute(
                 &connection.prepare_cached(
                     r#"
-                        INSERT INTO stock_movement (item_id, date, quantity)
+                        INSERT INTO stock_loss (item_id, date, quantity)
                         VALUES($1, $2, $3)
                         ON CONFLICT (item_id, date)
                         DO
