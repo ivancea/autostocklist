@@ -1,8 +1,9 @@
-use super::Database;
 use super::error::{Error, Kind};
-use serde::{Serialize, Deserialize};
+use super::Database;
+use serde::{Deserialize, Serialize};
 
 #[derive(Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
 pub struct Item {
     pub id: i32,
     pub name: String,
@@ -12,39 +13,72 @@ pub struct Item {
 }
 
 impl Database {
-    pub async fn get_item(
-        &self,
-        item_id: i32,
-    ) -> Result<Item, Error> {
+    pub async fn get_items(&self) -> Result<Vec<Item>, Error> {
+        let connection = self.pool.get().await?;
+
+        let rows = connection
+            .query(
+                &connection
+                    .prepare_cached(
+                        r#"
+                        SELECT i.id, i.name, i.min_stock, i.max_stock, t.stock
+                        FROM stock_item i 
+                        INNER JOIN stock_total t
+                            ON i.id = t.item_id
+                    "#,
+                    )
+                    .await?,
+                &[],
+            )
+            .await
+            .map_err(|e| {
+                Error(
+                    Kind::Query,
+                    "Error getting item".to_owned(),
+                    Some(Box::new(e)),
+                )
+            })?;
+
+        Ok(rows.iter().map(|row| Item {
+            id: row.get("id"),
+            name: row.get("name"),
+            min_stock: row.get("min_stock"),
+            max_stock: row.get("max_stock"),
+            stock: row.get("stock"),
+        }).collect())
+    }
+
+    pub async fn get_item(&self, item_id: i32) -> Result<Item, Error> {
         let connection = self.pool.get().await?;
 
         let row_option = connection
             .query_opt(
-                &connection.prepare_cached(
-                    r#"
+                &connection
+                    .prepare_cached(
+                        r#"
                         SELECT i.name, i.min_stock, i.max_stock, t.stock
                         FROM stock_item i 
                         INNER JOIN stock_total t
                             ON i.id = t.item_id
                         WHERE i.id = $1
-                    "#
-                ).await?,
-                &[&item_id]
-            ).await
-            .map_err(|e| Error(
-                Kind::Query,
-                "Error getting item".to_owned(),
-                Some(Box::new(e))
-            ))?;
-        
+                    "#,
+                    )
+                    .await?,
+                &[&item_id],
+            )
+            .await
+            .map_err(|e| {
+                Error(
+                    Kind::Query,
+                    "Error getting item".to_owned(),
+                    Some(Box::new(e)),
+                )
+            })?;
+
         if row_option.is_none() {
-            return Err(Error(
-                Kind::ItemNotFound,
-                "".to_owned(),
-                None
-            ));
+            return Err(Error(Kind::ItemNotFound, "".to_owned(), None));
         }
-        
+
         let row = row_option.unwrap();
 
         Ok(Item {

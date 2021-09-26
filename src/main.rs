@@ -1,5 +1,6 @@
 mod database;
 
+use actix_cors::Cors;
 use actix_web::{get, web, App, HttpServer, Responder};
 use actix_web::{middleware, HttpResponse};
 use chrono::NaiveDate;
@@ -11,7 +12,7 @@ use log::info;
 use std::env;
 
 
-#[get("/{item_id}/{year}/{month}/{day}/{quantity}")]
+#[get("/item/{item_id}/{year}/{month}/{day}/{quantity}")]
 async fn update_stock(
     path: web::Path<(i32, i32, u32, u32, i32)>,
     database: web::Data<Database>,
@@ -25,7 +26,17 @@ async fn update_stock(
     }
 }
 
-#[get("/{item_id}")]
+#[get("/item")]
+async fn get_items(
+    database: web::Data<Database>,
+) -> impl Responder {
+    match database.get_items().await {
+        Ok(items) => HttpResponse::Ok().json(items),
+        Err(e) => HttpResponse::InternalServerError().body(format!("Error: {}", e)),
+    }
+}
+
+#[get("/item/{item_id}")]
 async fn get_item(
     path: web::Path<i32>,
     database: web::Data<Database>,
@@ -53,8 +64,11 @@ async fn main() -> std::io::Result<()> {
     HttpServer::new(move || {
         App::new()
             .app_data(web::Data::new(database.clone()))
+            .wrap(middleware::NormalizePath::trim())
+            .wrap(Cors::permissive())
             .wrap(middleware::Logger::default())
             .service(update_stock)
+            .service(get_items)
             .service(get_item)
     })
     .bind(("0.0.0.0", 8080))?
