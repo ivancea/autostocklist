@@ -39,13 +39,16 @@ impl Database {
                 )
             })?;
 
-        Ok(rows.iter().map(|row| Item {
-            id: row.get("id"),
-            name: row.get("name"),
-            min_stock: row.get("min_stock"),
-            max_stock: row.get("max_stock"),
-            stock: row.get("stock"),
-        }).collect())
+        Ok(rows
+            .iter()
+            .map(|row| Item {
+                id: row.get("id"),
+                name: row.get("name"),
+                min_stock: row.get("min_stock"),
+                max_stock: row.get("max_stock"),
+                stock: row.get("stock"),
+            })
+            .collect())
     }
 
     pub async fn get_item(&self, item_id: i32) -> Result<Item, Error> {

@@ -1,8 +1,8 @@
 use chrono::NaiveDate;
 use log::debug;
 
-use super::Database;
 use super::error::{Error, Kind};
+use super::Database;
 
 impl Database {
     pub async fn reduce_stock(
@@ -19,28 +19,36 @@ impl Database {
             ));
         }
 
-        debug!("Reducing stock: item_id:{}, date:{}, quantity:{}", item_id, date, quantity);
+        debug!(
+            "Reducing stock: item_id:{}, date:{}, quantity:{}",
+            item_id, date, quantity
+        );
 
         let connection = self.pool.get().await?;
 
         let modified_rows = connection
             .execute(
-                &connection.prepare_cached(
-                    r#"
+                &connection
+                    .prepare_cached(
+                        r#"
                         INSERT INTO stock_loss (item_id, date, quantity)
                         VALUES($1, $2, $3)
                         ON CONFLICT (item_id, date)
                         DO
                         UPDATE SET quantity = stock_movement.quantity + excluded.quantity
-                    "#
-                ).await?,
-                &[&item_id, &date, &quantity]
-            ).await
-            .map_err(|e| Error(
-                Kind::Query,
-                "Error inserting movement".to_owned(),
-                Some(Box::new(e))
-            ))?;
+                    "#,
+                    )
+                    .await?,
+                &[&item_id, &date, &quantity],
+            )
+            .await
+            .map_err(|e| {
+                Error(
+                    Kind::Query,
+                    "Error inserting movement".to_owned(),
+                    Some(Box::new(e)),
+                )
+            })?;
 
         if modified_rows == 1 {
             Ok(())

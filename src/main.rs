@@ -4,13 +4,12 @@ use actix_cors::Cors;
 use actix_web::{get, web, App, HttpServer, Responder};
 use actix_web::{middleware, HttpResponse};
 use chrono::NaiveDate;
-use database::Database;
 use database::error::Kind;
+use database::Database;
 use dotenv::dotenv;
 use env_logger::Env;
 use log::info;
 use std::env;
-
 
 #[get("/item/{item_id}/{year}/{month}/{day}/{quantity}")]
 async fn update_stock(
@@ -27,9 +26,7 @@ async fn update_stock(
 }
 
 #[get("/item")]
-async fn get_items(
-    database: web::Data<Database>,
-) -> impl Responder {
+async fn get_items(database: web::Data<Database>) -> impl Responder {
     match database.get_items().await {
         Ok(items) => HttpResponse::Ok().json(items),
         Err(e) => HttpResponse::InternalServerError().body(format!("Error: {}", e)),
@@ -37,17 +34,14 @@ async fn get_items(
 }
 
 #[get("/item/{item_id}")]
-async fn get_item(
-    path: web::Path<i32>,
-    database: web::Data<Database>,
-) -> impl Responder {
+async fn get_item(path: web::Path<i32>, database: web::Data<Database>) -> impl Responder {
     let item_id = path.into_inner();
 
     match database.get_item(item_id).await {
         Ok(item) => HttpResponse::Ok().json(item),
         Err(e) => match e.0 {
             Kind::ItemNotFound => HttpResponse::NotFound().body("Item not found"),
-            _ => HttpResponse::InternalServerError().body(format!("Error: {}", e))
+            _ => HttpResponse::InternalServerError().body(format!("Error: {}", e)),
         },
     }
 }
@@ -86,6 +80,7 @@ async fn initialize_database() -> Database {
     let db_password = env::var("DB_PASSWORD").expect("DB_PASSWORD must be set");
 
     info!("Connecting to database");
-    Database::new(&db_host, db_port, &db_database, &db_user, &db_password).await
+    Database::new(&db_host, db_port, &db_database, &db_user, &db_password)
+        .await
         .expect("Error connecting to database")
 }
