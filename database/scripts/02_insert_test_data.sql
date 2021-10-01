@@ -2,7 +2,7 @@ INSERT INTO stock_item ("name", min_stock, max_stock)
 VALUES('Test item', 2, 10);
 
 INSERT INTO stock_item ("name", min_stock, max_stock)
-VALUES('No stock item', 0, 100);
+VALUES('No stock item', 1, 100);
 
 
 INSERT INTO stock_resupply (item_id, "date", quantity)

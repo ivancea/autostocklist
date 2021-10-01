@@ -1,50 +1,14 @@
 mod database;
+mod http_configuration;
 
 use actix_cors::Cors;
-use actix_web::{get, web, App, HttpServer, Responder};
-use actix_web::{middleware, HttpResponse};
-use chrono::NaiveDate;
-use database::error::Kind;
+use actix_web::middleware;
+use actix_web::{web, App, HttpServer};
 use database::Database;
 use dotenv::dotenv;
 use env_logger::Env;
 use log::info;
 use std::env;
-
-#[get("/item/{item_id}/{year}/{month}/{day}/{quantity}")]
-async fn update_stock(
-    path: web::Path<(i32, i32, u32, u32, i32)>,
-    database: web::Data<Database>,
-) -> impl Responder {
-    let (item_id, year, month, day, quantity) = path.into_inner();
-    let date = NaiveDate::from_ymd(year, month, day);
-
-    match database.reduce_stock(item_id, date, quantity).await {
-        Ok(_) => HttpResponse::Ok().body(""),
-        Err(e) => HttpResponse::InternalServerError().body(format!("Error: {}", e)),
-    }
-}
-
-#[get("/item")]
-async fn get_items(database: web::Data<Database>) -> impl Responder {
-    match database.get_items().await {
-        Ok(items) => HttpResponse::Ok().json(items),
-        Err(e) => HttpResponse::InternalServerError().body(format!("Error: {}", e)),
-    }
-}
-
-#[get("/item/{item_id}")]
-async fn get_item(path: web::Path<i32>, database: web::Data<Database>) -> impl Responder {
-    let item_id = path.into_inner();
-
-    match database.get_item(item_id).await {
-        Ok(item) => HttpResponse::Ok().json(item),
-        Err(e) => match e.0 {
-            Kind::ItemNotFound => HttpResponse::NotFound().body("Item not found"),
-            _ => HttpResponse::InternalServerError().body(format!("Error: {}", e)),
-        },
-    }
-}
 
 #[actix_web::main]
 async fn main() -> std::io::Result<()> {
@@ -61,9 +25,7 @@ async fn main() -> std::io::Result<()> {
             .wrap(middleware::NormalizePath::trim())
             .wrap(Cors::permissive())
             .wrap(middleware::Logger::default())
-            .service(update_stock)
-            .service(get_items)
-            .service(get_item)
+            .configure(http_configuration::configure)
     })
     .bind(("0.0.0.0", 8080))?
     .run()

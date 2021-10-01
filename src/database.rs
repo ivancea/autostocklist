@@ -1,6 +1,6 @@
 pub mod error;
 pub mod item;
-pub mod movements;
+pub mod stock;
 
 use deadpool_postgres::{Config, ManagerConfig, Pool, RecyclingMethod};
 use error::{Error, Kind};

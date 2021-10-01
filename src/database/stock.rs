@@ -5,20 +5,12 @@ use super::error::{Error, Kind};
 use super::Database;
 
 impl Database {
-    pub async fn reduce_stock(
+    pub async fn update_stock_loss(
         &self,
         item_id: i32,
         date: NaiveDate,
         quantity: i32,
     ) -> Result<(), Error> {
-        if quantity <= 0 {
-            return Err(Error(
-                Kind::Query,
-                "Quantity must be a non-zero positive number".to_owned(),
-                None,
-            ));
-        }
-
         debug!(
             "Reducing stock: item_id:{}, date:{}, quantity:{}",
             item_id, date, quantity

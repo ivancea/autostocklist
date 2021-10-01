@@ -1,10 +1,10 @@
 use super::error::{Error, Kind};
 use super::Database;
-use serde::{Deserialize, Serialize};
+use serde::Serialize;
 
-#[derive(Serialize, Deserialize)]
+#[derive(Serialize)]
 #[serde(rename_all = "camelCase")]
-pub struct Item {
+pub struct ItemInformation {
     pub id: i32,
     pub name: String,
     pub min_stock: Option<i32>,
@@ -13,7 +13,7 @@ pub struct Item {
 }
 
 impl Database {
-    pub async fn get_items(&self) -> Result<Vec<Item>, Error> {
+    pub async fn get_items(&self) -> Result<Vec<ItemInformation>, Error> {
         let connection = self.pool.get().await?;
 
         let rows = connection
@@ -41,7 +41,7 @@ impl Database {
 
         Ok(rows
             .iter()
-            .map(|row| Item {
+            .map(|row| ItemInformation {
                 id: row.get("id"),
                 name: row.get("name"),
                 min_stock: row.get("min_stock"),
@@ -51,7 +51,7 @@ impl Database {
             .collect())
     }
 
-    pub async fn get_item(&self, item_id: i32) -> Result<Item, Error> {
+    pub async fn get_item(&self, item_id: i32) -> Result<ItemInformation, Error> {
         let connection = self.pool.get().await?;
 
         let row_option = connection
@@ -84,7 +84,7 @@ impl Database {
 
         let row = row_option.unwrap();
 
-        Ok(Item {
+        Ok(ItemInformation {
             id: item_id,
             name: row.get("name"),
             min_stock: row.get("min_stock"),
