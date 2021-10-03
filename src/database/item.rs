@@ -1,4 +1,4 @@
-use super::error::{Error, Kind};
+use super::error::{DatabaseError, Kind};
 use super::Database;
 use serde::Serialize;
 
@@ -9,11 +9,11 @@ pub struct ItemInformation {
     pub name: String,
     pub min_stock: Option<i32>,
     pub max_stock: Option<i32>,
-    pub stock: i64,
+    pub stock: i32,
 }
 
 impl Database {
-    pub async fn get_items(&self) -> Result<Vec<ItemInformation>, Error> {
+    pub async fn get_items(&self) -> Result<Vec<ItemInformation>, DatabaseError> {
         let connection = self.pool.get().await?;
 
         let rows = connection
@@ -21,18 +21,16 @@ impl Database {
                 &connection
                     .prepare_cached(
                         r#"
-                        SELECT i.id, i.name, i.min_stock, i.max_stock, t.stock
-                        FROM stock_item i 
-                        INNER JOIN stock_total t
-                            ON i.id = t.item_id
-                    "#,
+                            SELECT id, name, min_stock, max_stock, stock
+                            FROM stock.item
+                        "#,
                     )
                     .await?,
                 &[],
             )
             .await
             .map_err(|e| {
-                Error(
+                DatabaseError(
                     Kind::Query,
                     "Error getting item".to_owned(),
                     Some(Box::new(e)),
@@ -51,7 +49,7 @@ impl Database {
             .collect())
     }
 
-    pub async fn get_item(&self, item_id: i32) -> Result<ItemInformation, Error> {
+    pub async fn get_item(&self, item_id: i32) -> Result<ItemInformation, DatabaseError> {
         let connection = self.pool.get().await?;
 
         let row_option = connection
@@ -59,19 +57,17 @@ impl Database {
                 &connection
                     .prepare_cached(
                         r#"
-                        SELECT i.name, i.min_stock, i.max_stock, t.stock
-                        FROM stock_item i 
-                        INNER JOIN stock_total t
-                            ON i.id = t.item_id
-                        WHERE i.id = $1
-                    "#,
+                            SELECT name, min_stock, max_stock, stock
+                            FROM stock.item
+                            WHERE id = $1
+                        "#,
                     )
                     .await?,
                 &[&item_id],
             )
             .await
             .map_err(|e| {
-                Error(
+                DatabaseError(
                     Kind::Query,
                     "Error getting item".to_owned(),
                     Some(Box::new(e)),
@@ -79,7 +75,7 @@ impl Database {
             })?;
 
         if row_option.is_none() {
-            return Err(Error(Kind::ItemNotFound, "".to_owned(), None));
+            return Err(DatabaseError(Kind::ItemNotFound, "".to_owned(), None));
         }
 
         let row = row_option.unwrap();

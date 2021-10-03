@@ -3,7 +3,7 @@ pub mod item;
 pub mod stock;
 
 use deadpool_postgres::{Config, ManagerConfig, Pool, RecyclingMethod};
-use error::{Error, Kind};
+use error::{DatabaseError, Kind};
 use log::debug;
 use postgres::NoTls;
 
@@ -19,7 +19,7 @@ impl Database {
         database: impl AsRef<str>,
         user: impl AsRef<str>,
         password: impl AsRef<str>,
-    ) -> Result<Database, Error> {
+    ) -> Result<Database, DatabaseError> {
         debug!("Connecting with:");
         debug!("    - Host: {}", host.as_ref());
         debug!("    - Port: {}", port);
@@ -44,7 +44,7 @@ impl Database {
             .simple_query("SELECT 1")
             .await
             .map_err(|e| {
-                Error(
+                DatabaseError(
                     Kind::Connection,
                     "Error checking connection".to_owned(),
                     Some(Box::new(e)),

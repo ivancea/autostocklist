@@ -1,29 +1,35 @@
-use crate::database::{error::Kind, Database};
+use crate::services::error::ServiceError;
+use crate::services::item_service::ItemService;
 use actix_web::web::ServiceConfig;
 use actix_web::HttpResponse;
 use actix_web::{get, web, Responder};
 
 pub fn configure(server: &mut ServiceConfig) {
-    server.service(web::scope("/item").service(get_items).service(get_item));
+    server.service(get_items).service(get_item);
 }
 
-#[get("")]
-async fn get_items(database: web::Data<Database>) -> impl Responder {
-    match database.get_items().await {
+#[get("/item")]
+async fn get_items(item_service: web::Data<ItemService>) -> impl Responder {
+    match item_service.get_items().await {
         Ok(items) => HttpResponse::Ok().json(items),
-        Err(e) => HttpResponse::InternalServerError().body(format!("Error: {}", e)),
+        Err(e) => HttpResponse::InternalServerError().json(format!("Error: {}", e)),
     }
 }
 
-#[get("/{item_id}")]
-async fn get_item(path: web::Path<i32>, database: web::Data<Database>) -> impl Responder {
+#[get("/item/{item_id}")]
+async fn get_item(path: web::Path<i32>, item_service: web::Data<ItemService>) -> impl Responder {
     let item_id = path.into_inner();
 
-    match database.get_item(item_id).await {
+    match item_service.get_item(item_id).await {
         Ok(item) => HttpResponse::Ok().json(item),
-        Err(e) => match e.0 {
-            Kind::ItemNotFound => HttpResponse::NotFound().body("Item not found"),
-            _ => HttpResponse::InternalServerError().body(format!("Error: {}", e)),
+        Err(e) => match e {
+            ServiceError::Database(database_error) => match database_error.0 {
+                crate::database::error::Kind::ItemNotFound => {
+                    HttpResponse::NotFound().json("Item not found")
+                }
+                _ => HttpResponse::InternalServerError().json(format!("Error: {}", database_error)),
+            },
+            _ => HttpResponse::InternalServerError().json(format!("Error: {}", e)),
         },
     }
 }

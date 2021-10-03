@@ -1,5 +1,6 @@
 mod database;
 mod http_configuration;
+mod services;
 
 use actix_cors::Cors;
 use actix_web::middleware;
@@ -8,6 +9,7 @@ use database::Database;
 use dotenv::dotenv;
 use env_logger::Env;
 use log::info;
+use services::item_service::ItemService;
 use std::env;
 
 #[actix_web::main]
@@ -17,11 +19,12 @@ async fn main() -> std::io::Result<()> {
 
     info!("Initializing services");
     let database = initialize_database().await;
+    let item_service = ItemService::new(database.clone());
 
     info!("Starting server");
     HttpServer::new(move || {
         App::new()
-            .app_data(web::Data::new(database.clone()))
+            .app_data(web::Data::new(item_service.clone()))
             .wrap(middleware::NormalizePath::trim())
             .wrap(Cors::permissive())
             .wrap(middleware::Logger::default())

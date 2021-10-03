@@ -10,19 +10,19 @@ pub enum Kind {
 }
 
 #[derive(Debug)]
-pub struct Error(
+pub struct DatabaseError(
     pub Kind,
     pub String,
     pub Option<Box<dyn std::error::Error + Send>>,
 );
 
-impl std::error::Error for Error {
+impl std::error::Error for DatabaseError {
     fn cause(&self) -> Option<&dyn std::error::Error> {
         self.2.as_ref().map(|e| &**e as _)
     }
 }
 
-impl Display for Error {
+impl Display for DatabaseError {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match &self.0 {
             Kind::Connection => write!(f, "Connection error")?,
@@ -38,9 +38,9 @@ impl Display for Error {
     }
 }
 
-impl From<ConfigError> for Error {
+impl From<ConfigError> for DatabaseError {
     fn from(error: ConfigError) -> Self {
-        Error(
+        DatabaseError(
             Kind::Connection,
             "Configuration error".to_owned(),
             Some(Box::new(error)),
@@ -48,9 +48,9 @@ impl From<ConfigError> for Error {
     }
 }
 
-impl From<PoolError> for Error {
+impl From<PoolError> for DatabaseError {
     fn from(error: PoolError) -> Self {
-        Error(
+        DatabaseError(
             Kind::Connection,
             "Pool error".to_owned(),
             Some(Box::new(error)),
@@ -58,8 +58,8 @@ impl From<PoolError> for Error {
     }
 }
 
-impl From<postgres::Error> for Error {
+impl From<postgres::Error> for DatabaseError {
     fn from(error: postgres::Error) -> Self {
-        Error(Kind::Connection, "".to_owned(), Some(Box::new(error)))
+        DatabaseError(Kind::Connection, "".to_owned(), Some(Box::new(error)))
     }
 }
