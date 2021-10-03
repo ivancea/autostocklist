@@ -1,4 +1,5 @@
 .vscode
 
+/web
 /database/data
 /target
