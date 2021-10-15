@@ -30,8 +30,8 @@ jobs:
             ~/.cargo/registry/index/
             ~/.cargo/registry/cache/
             ~/.cargo/git/db/
-            target/
-          key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
+            ./server/target/
+          key: ${{ runner.os }}-cargo-${{ hashFiles('./server/Cargo.lock') }}
       - name: Build
         run: cargo build
       - name: Run tests
