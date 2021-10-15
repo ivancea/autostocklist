@@ -1,0 +1,30 @@
+name: Web validation
+
+on:
+  push:
+    branches: [master]
+    paths:
+      - ./web
+      - .github/workflows/web-validate.yml
+  pull_request:
+    branches: [master]
+    paths:
+      - ./web
+      - .github/workflows/web-validate.yml
+
+env:
+  CARGO_TERM_COLOR: always
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - uses: actions/setup-node@v2
+        with:
+          node-version: '14'
+          cache: 'npm'
+          cache-dependency-path: './web/package-lock.json'
+      - run: npm ci
+      - run: npm run build
+      - run: npm test
