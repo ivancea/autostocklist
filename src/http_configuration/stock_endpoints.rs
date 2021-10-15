@@ -1,10 +1,10 @@
+use crate::dtos::stock_dtos::UpdateStockRequest;
 use crate::services::error::ServiceError;
-use crate::services::item_service::ItemService;
+use crate::services::stock_service::StockService;
 use actix_web::web::ServiceConfig;
 use actix_web::HttpResponse;
-use actix_web::{post, web, Responder};
+use actix_web::{put, web, Responder};
 use chrono::{NaiveDate, Utc};
-use serde::Deserialize;
 
 pub fn configure(server: &mut ServiceConfig) {
     server
@@ -12,24 +12,11 @@ pub fn configure(server: &mut ServiceConfig) {
         .service(update_stock_resupply);
 }
 
-#[derive(Deserialize)]
-struct Date {
-    day: u32,
-    month: u32,
-    year: i32,
-}
-
-#[derive(Deserialize)]
-struct UpdateStockBody {
-    quantity: i32,
-    date: Option<Date>,
-}
-
-#[post("/item/{item_id}/loss")]
+#[put("/item/{item_id}/loss")]
 async fn update_stock_loss(
     path: web::Path<i32>,
-    body: web::Json<UpdateStockBody>,
-    item_service: web::Data<ItemService>,
+    body: web::Json<UpdateStockRequest>,
+    stock_service: web::Data<StockService>,
 ) -> impl Responder {
     let item_id = path.into_inner();
     let quantity = body.quantity;
@@ -42,7 +29,7 @@ async fn update_stock_loss(
         return HttpResponse::BadRequest().json("Invalid date provided");
     }
 
-    match item_service
+    match stock_service
         .update_stock_loss(item_id, date.unwrap(), quantity)
         .await
     {
@@ -56,11 +43,11 @@ async fn update_stock_loss(
     }
 }
 
-#[post("/item/{item_id}/resupply")]
+#[put("/item/{item_id}/resupply")]
 async fn update_stock_resupply(
     path: web::Path<i32>,
-    body: web::Json<UpdateStockBody>,
-    item_service: web::Data<ItemService>,
+    body: web::Json<UpdateStockRequest>,
+    item_service: web::Data<StockService>,
 ) -> impl Responder {
     let item_id = path.into_inner();
     let quantity = body.quantity;

@@ -1,19 +1,12 @@
-use super::error::{DatabaseError, Kind};
-use super::Database;
-use serde::Serialize;
+use crate::dtos::item_dtos::{Item, NewItemRequest};
 
-#[derive(Serialize)]
-#[serde(rename_all = "camelCase")]
-pub struct ItemInformation {
-    pub id: i32,
-    pub name: String,
-    pub min_stock: Option<i32>,
-    pub max_stock: Option<i32>,
-    pub stock: i32,
-}
+use super::{
+    error::{DatabaseError, Kind},
+    Database,
+};
 
 impl Database {
-    pub async fn get_items(&self) -> Result<Vec<ItemInformation>, DatabaseError> {
+    pub async fn get_items(&self) -> Result<Vec<Item>, DatabaseError> {
         let connection = self.pool.get().await?;
 
         let rows = connection
@@ -39,7 +32,7 @@ impl Database {
 
         Ok(rows
             .iter()
-            .map(|row| ItemInformation {
+            .map(|row| Item {
                 id: row.get("id"),
                 name: row.get("name"),
                 min_stock: row.get("min_stock"),
@@ -49,7 +42,7 @@ impl Database {
             .collect())
     }
 
-    pub async fn get_item(&self, item_id: i32) -> Result<ItemInformation, DatabaseError> {
+    pub async fn get_item(&self, item_id: i32) -> Result<Item, DatabaseError> {
         let connection = self.pool.get().await?;
 
         let row_option = connection
@@ -80,8 +73,52 @@ impl Database {
 
         let row = row_option.unwrap();
 
-        Ok(ItemInformation {
+        Ok(Item {
             id: item_id,
+            name: row.get("name"),
+            min_stock: row.get("min_stock"),
+            max_stock: row.get("max_stock"),
+            stock: row.get("stock"),
+        })
+    }
+
+    pub async fn create_item(&self, item: NewItemRequest) -> Result<Item, DatabaseError> {
+        let connection = self.pool.get().await?;
+
+        let inserted_row_ids = connection
+            .query(
+                &connection
+                    .prepare_cached(
+                        r#"
+                            INSERT INTO stock.item (name, min_stock, max_stock, stock)
+                            VALUES ($1, $2, $3, 0)
+                            RETURNING id, name, min_stock, max_stock, stock
+                        "#,
+                    )
+                    .await?,
+                &[&item.name, &item.min_stock, &item.max_stock],
+            )
+            .await
+            .map_err(|e| {
+                DatabaseError(
+                    Kind::Query,
+                    "Error inserting item".to_owned(),
+                    Some(Box::new(e)),
+                )
+            })?;
+
+        if inserted_row_ids.len() != 1 {
+            return Err(DatabaseError(
+                Kind::UpdateError,
+                "Not exactly 1 row inserted".to_owned(),
+                None,
+            ));
+        }
+
+        let row = inserted_row_ids.first().unwrap();
+
+        Ok(Item {
+            id: row.get("id"),
             name: row.get("name"),
             min_stock: row.get("min_stock"),
             max_stock: row.get("max_stock"),

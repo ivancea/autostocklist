@@ -3,7 +3,7 @@ CREATE SCHEMA stock;
 CREATE TABLE stock.item (
     id INTEGER NOT NULL PRIMARY KEY GENERATED ALWAYS AS IDENTITY,
     name TEXT NOT NULL,
-    min_stock INTEGER CHECK (min_stock >= 0 OR min_stock IS NULL),
+    min_stock INTEGER NOT NULL CHECK (min_stock >= 0),
     max_stock INTEGER CHECK (max_stock > min_stock OR max_stock IS NULL),
     stock INTEGER CHECK (stock >= 0)
 );

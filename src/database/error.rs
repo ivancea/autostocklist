@@ -7,6 +7,7 @@ pub enum Kind {
     Connection,
     Query,
     ItemNotFound,
+    UpdateError,
 }
 
 #[derive(Debug)]
@@ -28,6 +29,7 @@ impl Display for DatabaseError {
             Kind::Connection => write!(f, "Connection error")?,
             Kind::Query => write!(f, "Query execution error")?,
             Kind::ItemNotFound => write!(f, "Item not found")?,
+            Kind::UpdateError => write!(f, "Error updating table")?,
         };
 
         if let Some(ref cause) = self.2 {
