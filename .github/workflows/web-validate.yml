@@ -12,9 +12,6 @@ on:
       - ./web
       - .github/workflows/web-validate.yml
 
-env:
-  CARGO_TERM_COLOR: always
-
 jobs:
   build:
     runs-on: ubuntu-latest
