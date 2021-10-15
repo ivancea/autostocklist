@@ -1,4 +1,4 @@
-name: Rust
+name: Server validation
 
 on:
   push:
@@ -15,5 +15,7 @@ jobs:
       - uses: actions/checkout@v2
       - name: Build
         run: cargo build --verbose
+        working-directory: /server
       - name: Run tests
         run: cargo test --verbose
+        working-directory: /server
