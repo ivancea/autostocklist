@@ -5,12 +5,12 @@ on:
     branches: [master]
     paths:
       - "**/Dockerfile"
-      - .github/workflows/docker-validate.yml
+      - .github/workflows/docker-validation.yml
   pull_request:
     branches: [master]
     paths:
       - "**/Dockerfile"
-      - .github/workflows/docker-validate.yml
+      - .github/workflows/docker-validation.yml
 
 jobs:
   get-files:
