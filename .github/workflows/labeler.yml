@@ -1,10 +1,10 @@
 name: "Pull Request Labeler"
 on:
   pull_request_target:
-    types: [opened, synchronize, reopened, unlabeled]
+    types: [opened, synchronize, reopened, labeled, unlabeled]
 
 jobs:
-  triage:
+  labeler:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/labeler@v3
