@@ -10,7 +10,6 @@ FROM rust as build
 WORKDIR /build
 COPY --from=dependencies /build/target target
 COPY . .
-
 # Makes cargo detect the file is newer to rebuild it
 RUN touch src/main.rs
 RUN cargo build --release

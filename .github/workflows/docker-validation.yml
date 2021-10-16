@@ -16,6 +16,8 @@ jobs:
   get-files:
     name: Get changed files
     runs-on: ubuntu-latest
+    outputs:
+      dockerfiles: ${{ steps.filter.outputs.dockerfiles_files }}
     steps:
       - uses: actions/checkout@v2
       - uses: dorny/paths-filter@v2
