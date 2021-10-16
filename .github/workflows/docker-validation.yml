@@ -31,6 +31,7 @@ jobs:
   check:
     name: Check Dockerfiles
     needs: get-files
+    if: ${{ needs.get-files.outputs.dockerfiles != '[]' && needs.get-files.outputs.dockerfiles != '' }}
     strategy:
       matrix:
         dockerfile: ${{ fromJson(needs.get-files.outputs.dockerfiles) }}
