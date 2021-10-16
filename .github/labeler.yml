@@ -1,0 +1,15 @@
+workflows:
+  - .github/workflows/**
+
+database:
+  - database/**/*
+
+server:
+  - server/**/*
+
+web:
+  - web/**/*
+
+docker:
+  - "**/Dockerfile"
+  - "**/docker-compose*.yml"
