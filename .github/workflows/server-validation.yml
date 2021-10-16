@@ -5,18 +5,18 @@ on:
     branches: [master]
     paths:
       - ./server
-      - .github/workflows/server-validate.yml
+      - .github/workflows/server-validation.yml
   pull_request:
     branches: [master]
     paths:
       - ./server
-      - .github/workflows/server-validate.yml
+      - .github/workflows/server-validation.yml
 
 env:
   CARGO_TERM_COLOR: always
 
 jobs:
-  build:
+  validation:
     name: Server validation
     runs-on: ubuntu-latest
     steps:

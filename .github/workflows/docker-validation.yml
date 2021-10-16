@@ -1,0 +1,46 @@
+name: Docker validation
+
+on:
+  push:
+    branches: [master]
+    paths:
+      - "**/Dockerfile"
+      - .github/workflows/docker-validation.yml
+  pull_request:
+    branches: [master]
+    paths:
+      - "**/Dockerfile"
+      - .github/workflows/docker-validation.yml
+
+jobs:
+  get-files:
+    name: Get changed files
+    runs-on: ubuntu-latest
+    outputs:
+      dockerfiles: ${{ steps.filter.outputs.dockerfiles_files }}
+    steps:
+      - uses: dorny/paths-filter@v2
+        id: filter
+        with:
+          list-files: json
+          filters: |
+            dockerfiles: 
+              - "**/Dockerfile"
+
+  check:
+    name: Check Dockerfiles
+    needs: get-files
+    strategy:
+      matrix:
+        dockerfile: ${{ fromJson(needs.get-files.outputs.dockerfiles) }}
+    runs-on: ubuntu-latest
+    steps:
+      - id: get-directory
+        # Remove last path segment to only keep the Dockerfile directory
+        run: |
+          directory=$(echo ${{matrix.dockerfile}} | sed -r 's/\/[^\/]+$//g')
+          echo "::set-output name=directory::$directory"
+      - run: echo "${{steps.get-directory.outputs.directory}}"
+      - uses: actions/checkout@v2
+      - name: Build Dockerfile ${{ matrix.dockerfile }}
+        run: docker build ${{steps.get-directory.outputs.directory}} -f ${{ matrix.dockerfile }}
