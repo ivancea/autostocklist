@@ -1,6 +1,7 @@
 FROM rust as dependencies
 WORKDIR /build
-# Fummy file to download dependencies
+
+# File to allow this to download dependencies
 RUN mkdir src && echo 'fn main() {}' > src/main.rs
 COPY Cargo.toml Cargo.lock ./
 RUN cargo build --release
@@ -9,7 +10,7 @@ FROM rust as build
 WORKDIR /build
 COPY --from=dependencies /build/target target
 COPY . .
-# So that cargo detects the file is newer and rebuilds it
+# Makes cargo detect the file is newer to rebuild it
 RUN touch src/main.rs
 RUN cargo build --release
 
