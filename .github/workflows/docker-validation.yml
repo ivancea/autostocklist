@@ -35,6 +35,12 @@ jobs:
         dockerfile: ${{ fromJson(needs.get-files.outputs.dockerfiles) }}
     runs-on: ubuntu-latest
     steps:
+      - id: get-directory
+        # Remove last path segment to only keep the Dockerfile directory
+        run: |
+          directory=$(echo ${{matrix.dockerfile}} | sed -r 's/\/[^\/]+$//g')
+          echo "::set-output name=directory::$directory"
+      - run: echo "${{steps.get-directory.outputs.directory}}"
       - uses: actions/checkout@v2
       - name: Build Dockerfile ${{ matrix.dockerfile }}
-        run: docker build ${{ matrix.dockerfile }}
+        run: docker build ${{steps.get-directory.outputs.directory}} -f ${{ matrix.dockerfile }}
