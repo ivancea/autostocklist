@@ -5,15 +5,15 @@ on:
     branches: [master]
     paths:
       - ./web
-      - .github/workflows/web-validate.yml
+      - .github/workflows/web-validation.yml
   pull_request:
     branches: [master]
     paths:
       - ./web
-      - .github/workflows/web-validate.yml
+      - .github/workflows/web-validation.yml
 
 jobs:
-  build:
+  validation:
     name: Web validation
     runs-on: ubuntu-latest
     steps:

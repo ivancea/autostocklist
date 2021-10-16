@@ -1,0 +1,38 @@
+name: Docker validation
+
+on:
+  push:
+    branches: [master]
+    paths:
+      - "**/Dockerfile"
+      - .github/workflows/docker-validate.yml
+  pull_request:
+    branches: [master]
+    paths:
+      - "**/Dockerfile"
+      - .github/workflows/docker-validate.yml
+
+jobs:
+  get-files:
+    name: Get changed files
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - uses: dorny/paths-filter@v2
+        id: filter
+        with:
+          filters: |
+            dockerfiles: 
+              - "**/Dockerfile"
+
+  check:
+    name: Check Dockerfiles
+    needs: get-files
+    if: ${{ needs.get-files.outputs.dockerfiles != '[]' && needs.get-files.outputs.dockerfiles != '' }}
+    strategy:
+      matrix:
+        dockerfile: ${{ fromJson(needs.get-files.outputs.dockerfiles) }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Build Dockerfile ${{ matrix.dockerfile }}
+        run: docker build ${{ matrix.dockerfile }}
