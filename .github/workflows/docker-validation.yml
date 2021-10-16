@@ -19,7 +19,6 @@ jobs:
     outputs:
       dockerfiles: ${{ steps.filter.outputs.dockerfiles_files }}
     steps:
-      - uses: actions/checkout@v2
       - uses: dorny/paths-filter@v2
         id: filter
         with:
@@ -36,5 +35,6 @@ jobs:
         dockerfile: ${{ fromJson(needs.get-files.outputs.dockerfiles) }}
     runs-on: ubuntu-latest
     steps:
+      - uses: actions/checkout@v2
       - name: Build Dockerfile ${{ matrix.dockerfile }}
         run: docker build ${{ matrix.dockerfile }}
