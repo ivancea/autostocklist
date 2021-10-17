@@ -3,6 +3,7 @@ name = "autostocklist"
 version = "1.0.0"
 authors = ["Iván Cea Fontenla <ivancea96@outlook.com>"]
 edition = "2018"
+license = "MIT"
 
 [dependencies]
 # Web
