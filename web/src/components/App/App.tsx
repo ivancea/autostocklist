@@ -1,5 +1,5 @@
 import React from "react";
-import ItemsList from "../ItemsList/ItemsList";
+import ItemsList from "../ItemsListPage/ItemsListPage";
 import "./App.css";
 
 export default function App(): React.ReactElement {

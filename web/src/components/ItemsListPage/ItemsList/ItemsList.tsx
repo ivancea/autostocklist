@@ -4,18 +4,19 @@ import {
   GridRowParams,
   GridSortModel,
 } from "@mui/x-data-grid";
+import { useSnackbar } from "notistack";
 import React, { useCallback, useEffect, useMemo, useState } from "react";
-import { getItems } from "../../api";
-import { stringifyError } from "../../errors";
-import { Item } from "../../types/item";
-import AddStock from "./actions/AddStock";
-import RemoveStock from "./actions/RemoveStock";
+import { getItems } from "../../../api";
+import { stringifyError } from "../../../errors";
+import { Item } from "../../../types/item";
+import { useItems } from "../contexts/itemsContext";
+import AddStock from "./../actions/AddStock";
+import RemoveStock from "./../actions/RemoveStock";
 
 export default function ItemsList(): React.ReactElement {
-  const [items, setItems] = useState<Item[]>([]);
+  const { enqueueSnackbar } = useSnackbar();
+  const { items, setItems } = useItems();
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string>();
-
   const [sortModel, setSortModel] = useState<GridSortModel>([
     {
       field: "name",
@@ -27,9 +28,14 @@ export default function ItemsList(): React.ReactElement {
     setLoading(true);
     getItems()
       .then(setItems)
-      .catch((e) => setError(stringifyError(e)))
+      .catch((e) =>
+        enqueueSnackbar(`Error updating stock: ${stringifyError(e)}`, {
+          persist: true,
+          variant: "error",
+        })
+      )
       .finally(() => setLoading(false));
-  }, []);
+  }, [enqueueSnackbar, setItems]);
 
   const updateItemStock = useCallback(
     (item: Item, newStock: number) => {
@@ -52,7 +58,7 @@ export default function ItemsList(): React.ReactElement {
             ? "🔴"
             : item.stock < item.minStock + (item.maxStock - item.minStock) / 3
             ? "⚠️"
-            : "🟢";
+            : "✔️";
         },
       },
       { field: "name", headerName: "Nombre", type: "string", width: 150 },
@@ -84,19 +90,15 @@ export default function ItemsList(): React.ReactElement {
   );
 
   return (
-    <div>
-      <h1>Items List</h1>
-      {error && <div>Error: {error}</div>}
-      <div style={{ height: "60vh", maxWidth: "800px", margin: "0 auto" }}>
-        <DataGrid
-          loading={loading}
-          rows={items}
-          columns={columns}
-          disableSelectionOnClick
-          sortModel={sortModel}
-          onSortModelChange={(model) => setSortModel(model)}
-        />
-      </div>
+    <div style={{ height: "60vh", maxWidth: "800px", margin: "0 auto" }}>
+      <DataGrid
+        loading={loading}
+        rows={items}
+        columns={columns}
+        disableSelectionOnClick
+        sortModel={sortModel}
+        onSortModelChange={(model) => setSortModel(model)}
+      />
     </div>
   );
 }
