@@ -1,7 +1,7 @@
 use super::error::ServiceError;
 use crate::{
     database::Database,
-    dtos::item_dtos::{Item, NewItemRequest},
+    dtos::item_dtos::{Item, NewItemRequest, UpdateItemRequest},
 };
 
 #[derive(Clone)]
@@ -28,6 +28,13 @@ impl ItemService {
     pub async fn create_item(&self, item: NewItemRequest) -> Result<Item, ServiceError> {
         self.database
             .create_item(item)
+            .await
+            .map_err(|err| err.into())
+    }
+
+    pub async fn update_item(&self, item: UpdateItemRequest) -> Result<Item, ServiceError> {
+        self.database
+            .update_item(item)
             .await
             .map_err(|err| err.into())
     }

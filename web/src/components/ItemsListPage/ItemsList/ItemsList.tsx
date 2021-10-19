@@ -1,3 +1,5 @@
+import AddIcon from "@mui/icons-material/Add";
+import { CircularProgress, Fab } from "@mui/material";
 import {
   DataGrid,
   GridColumns,
@@ -6,7 +8,7 @@ import {
 } from "@mui/x-data-grid";
 import { useSnackbar } from "notistack";
 import React, { useCallback, useEffect, useMemo, useState } from "react";
-import { getItems } from "../../../api";
+import { createItem, getItems, updateItem } from "../../../api";
 import { stringifyError } from "../../../errors";
 import { Item } from "../../../types/item";
 import { useItems } from "../contexts/itemsContext";
@@ -16,7 +18,11 @@ import RemoveStock from "./../actions/RemoveStock";
 export default function ItemsList(): React.ReactElement {
   const { enqueueSnackbar } = useSnackbar();
   const { items, setItems } = useItems();
-  const [loading, setLoading] = useState(false);
+
+  // Loaders
+  const [loadingItems, setLoadingItems] = useState(false);
+  const [creatingItem, setCreatingItem] = useState(false);
+
   const [sortModel, setSortModel] = useState<GridSortModel>([
     {
       field: "name",
@@ -25,7 +31,7 @@ export default function ItemsList(): React.ReactElement {
   ]);
 
   useEffect(() => {
-    setLoading(true);
+    setLoadingItems(true);
     getItems()
       .then(setItems)
       .catch((e) =>
@@ -34,7 +40,7 @@ export default function ItemsList(): React.ReactElement {
           variant: "error",
         })
       )
-      .finally(() => setLoading(false));
+      .finally(() => setLoadingItems(false));
   }, [enqueueSnackbar, setItems]);
 
   const updateItemStock = useCallback(
@@ -43,6 +49,39 @@ export default function ItemsList(): React.ReactElement {
       setItems((items) => [...items]);
     },
     [setItems]
+  );
+
+  const addItem = useCallback(() => {
+    setCreatingItem(true);
+    createItem()
+      .then((item) => {
+        setItems((items) => [...items, item]);
+      })
+      .catch((e) =>
+        enqueueSnackbar(`Error creating item: ${stringifyError(e)}`, {
+          persist: true,
+          variant: "error",
+        })
+      )
+      .finally(() => setCreatingItem(false));
+  }, [enqueueSnackbar, setItems]);
+
+  const editItem = useCallback(
+    (params: GridRowParams) => {
+      const editedItem = params.row as Item;
+
+      updateItem(editedItem)
+        .then((item) => {
+          setItems((items) => items.map((i) => (i.id === item.id ? item : i)));
+        })
+        .catch((e) =>
+          enqueueSnackbar(`Error updating item: ${stringifyError(e)}`, {
+            persist: true,
+            variant: "error",
+          })
+        );
+    },
+    [enqueueSnackbar, setItems]
   );
 
   const columns: GridColumns = useMemo(
@@ -61,7 +100,13 @@ export default function ItemsList(): React.ReactElement {
             : "✔️";
         },
       },
-      { field: "name", headerName: "Nombre", type: "string", width: 150 },
+      {
+        field: "name",
+        headerName: "Nombre",
+        type: "string",
+        width: 150,
+        editable: true,
+      },
       { field: "stock", headerName: "Stock", type: "number", width: 75 },
       {
         field: "actions",
@@ -83,22 +128,49 @@ export default function ItemsList(): React.ReactElement {
           ];
         },
       },
-      { field: "minStock", headerName: "Min", type: "number", width: 75 },
-      { field: "maxStock", headerName: "Max", type: "number", width: 75 },
+      {
+        field: "minStock",
+        headerName: "Min",
+        type: "number",
+        width: 75,
+        editable: true,
+      },
+      {
+        field: "maxStock",
+        headerName: "Max",
+        type: "number",
+        width: 75,
+        editable: true,
+      },
     ],
     [updateItemStock]
   );
 
   return (
-    <div style={{ height: "60vh", maxWidth: "800px", margin: "0 auto" }}>
-      <DataGrid
-        loading={loading}
-        rows={items}
-        columns={columns}
-        disableSelectionOnClick
-        sortModel={sortModel}
-        onSortModelChange={(model) => setSortModel(model)}
-      />
+    <div>
+      <Fab
+        color="primary"
+        aria-label="add"
+        onClick={addItem}
+        disabled={creatingItem}
+      >
+        {creatingItem ? <CircularProgress /> : <AddIcon />}
+      </Fab>
+      <div style={{ height: "60vh", maxWidth: "800px", margin: "0 auto" }}>
+        <DataGrid
+          loading={loadingItems}
+          rows={items}
+          columns={columns}
+          disableSelectionOnClick
+          sortModel={sortModel}
+          editMode="row"
+          onSortModelChange={setSortModel}
+          onRowEditStop={editItem}
+          onRowEditCommit={() => {
+            console.log("a");
+          }}
+        />
+      </div>
     </div>
   );
 }

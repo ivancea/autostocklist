@@ -57,6 +57,23 @@ export function getItems(): Promise<Item[]> {
   return fetchJson<Item[]>(`${getBackendUrl()}/item`);
 }
 
+export function createItem(name = "", minStock = 0): Promise<Item> {
+  return fetchJson<Item>(`${getBackendUrl()}/item`, {
+    method: "POST",
+    body: JSON.stringify({
+      name: name,
+      minStock,
+    }),
+  });
+}
+
+export function updateItem(item: Item): Promise<Item> {
+  return fetchJson<Item>(`${getBackendUrl()}/item/${item.id}`, {
+    method: "PUT",
+    body: JSON.stringify(item),
+  });
+}
+
 export function updateStockLoss(
   itemId: number,
   quantity: number,
