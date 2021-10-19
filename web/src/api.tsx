@@ -24,24 +24,54 @@ function fetchJson<T>(url: string, options?: RequestInit): Promise<T> {
     ...options,
   };
 
-  return fetch(url, mergedOptions).then((response) =>
-    response.json().then((body: unknown) => {
-      if (Math.floor(response.status / 100) !== 2) {
-        const error: FetchError = {
-          status: response.status,
-          body,
-        };
+  return fetch(url, mergedOptions)
+    .then((response) =>
+      response.json().then((body: unknown) => {
+        if (Math.floor(response.status / 100) !== 2) {
+          const error: FetchError = {
+            status: response.status,
+            body,
+          };
 
-        return Promise.reject(error);
+          return Promise.reject(error);
+        }
+
+        return body as T;
+      })
+    )
+    .catch((e: unknown) => {
+      if (isFetchError(e)) {
+        return Promise.reject(e);
       }
 
-      return body as T;
-    })
-  );
+      const message = e instanceof Error ? e.message : e;
+
+      return Promise.reject({
+        status: 0,
+        body: message,
+      });
+    });
 }
 
 export function getItems(): Promise<Item[]> {
   return fetchJson<Item[]>(`${getBackendUrl()}/item`);
+}
+
+export function createItem(name = "", minStock = 0): Promise<Item> {
+  return fetchJson<Item>(`${getBackendUrl()}/item`, {
+    method: "POST",
+    body: JSON.stringify({
+      name: name,
+      minStock,
+    }),
+  });
+}
+
+export function updateItem(item: Item): Promise<Item> {
+  return fetchJson<Item>(`${getBackendUrl()}/item/${item.id}`, {
+    method: "PUT",
+    body: JSON.stringify(item),
+  });
 }
 
 export function updateStockLoss(

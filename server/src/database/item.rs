@@ -1,4 +1,4 @@
-use crate::dtos::item_dtos::{Item, NewItemRequest};
+use crate::dtos::item_dtos::{Item, NewItemRequest, UpdateItemRequest};
 
 use super::{
     error::{DatabaseError, Kind},
@@ -85,8 +85,8 @@ impl Database {
     pub async fn create_item(&self, item: NewItemRequest) -> Result<Item, DatabaseError> {
         let connection = self.pool.get().await?;
 
-        let inserted_row_ids = connection
-            .query(
+        let row_option = connection
+            .query_opt(
                 &connection
                     .prepare_cached(
                         r#"
@@ -107,15 +107,52 @@ impl Database {
                 )
             })?;
 
-        if inserted_row_ids.len() != 1 {
-            return Err(DatabaseError(
-                Kind::UpdateError,
-                "Not exactly 1 row inserted".to_owned(),
-                None,
-            ));
+        if row_option.is_none() {
+            return Err(DatabaseError(Kind::ItemNotFound, "".to_owned(), None));
         }
 
-        let row = inserted_row_ids.first().unwrap();
+        let row = row_option.unwrap();
+
+        Ok(Item {
+            id: row.get("id"),
+            name: row.get("name"),
+            min_stock: row.get("min_stock"),
+            max_stock: row.get("max_stock"),
+            stock: row.get("stock"),
+        })
+    }
+
+    pub async fn update_item(&self, item: UpdateItemRequest) -> Result<Item, DatabaseError> {
+        let connection = self.pool.get().await?;
+
+        let row_option = connection
+            .query_opt(
+                &connection
+                    .prepare_cached(
+                        r#"
+                            UPDATE stock.item
+                            SET name = $1, min_stock = $2, max_stock = $3
+                            WHERE id = $4
+                            RETURNING id, name, min_stock, max_stock, stock
+                        "#,
+                    )
+                    .await?,
+                &[&item.name, &item.min_stock, &item.max_stock, &item.id],
+            )
+            .await
+            .map_err(|e| {
+                DatabaseError(
+                    Kind::Query,
+                    "Error updating item".to_owned(),
+                    Some(Box::new(e)),
+                )
+            })?;
+
+        if row_option.is_none() {
+            return Err(DatabaseError(Kind::ItemNotFound, "".to_owned(), None));
+        }
+
+        let row = row_option.unwrap();
 
         Ok(Item {
             id: row.get("id"),
