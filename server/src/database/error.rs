@@ -1,6 +1,6 @@
 use std::fmt::Display;
 
-use deadpool_postgres::{config::ConfigError, PoolError};
+use deadpool_postgres::{CreatePoolError, PoolError};
 
 #[derive(Debug, Clone, Copy)]
 pub enum Kind {
@@ -38,11 +38,11 @@ impl Display for DatabaseError {
     }
 }
 
-impl From<ConfigError> for DatabaseError {
-    fn from(error: ConfigError) -> Self {
+impl From<CreatePoolError> for DatabaseError {
+    fn from(error: CreatePoolError) -> Self {
         DatabaseError(
             Kind::Connection,
-            "Configuration error".to_owned(),
+            "Error creating pool".to_owned(),
             Some(Box::new(error)),
         )
     }

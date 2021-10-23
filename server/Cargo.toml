@@ -2,7 +2,8 @@
 name = "autostocklist"
 version = "1.0.0"
 authors = ["Iván Cea Fontenla <ivancea96@outlook.com>"]
-edition = "2018"
+edition = "2021"
+rust-version = "1.56"
 license = "MIT"
 
 [dependencies]

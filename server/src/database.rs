@@ -2,7 +2,7 @@ pub mod error;
 pub mod item;
 pub mod stock;
 
-use deadpool_postgres::{Config, ManagerConfig, Pool, RecyclingMethod};
+use deadpool_postgres::{Config, ManagerConfig, Pool, RecyclingMethod, Runtime};
 use error::{DatabaseError, Kind};
 use log::debug;
 use postgres::NoTls;
@@ -37,7 +37,7 @@ impl Database {
             recycling_method: RecyclingMethod::Fast,
         });
 
-        let pool = config.create_pool(NoTls)?;
+        let pool = config.create_pool(Some(Runtime::Tokio1), NoTls)?;
 
         pool.get()
             .await?
