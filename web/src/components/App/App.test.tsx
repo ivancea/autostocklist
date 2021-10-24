@@ -11,6 +11,7 @@ test("renders learn react link", () => {
       </SnackbarProvider>
     </React.StrictMode>
   );
+
   /*const linkElement = screen.getByText(/learn react/i);
   expect(linkElement).toBeInTheDocument();*/
 });
