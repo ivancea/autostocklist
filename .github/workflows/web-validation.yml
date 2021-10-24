@@ -4,7 +4,7 @@ on:
   push:
     branches: [master]
     paths:
-      - ./web
+      - ./web/**
       - .github/workflows/web-validation.yml
   pull_request:
     branches: [master]
