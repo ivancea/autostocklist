@@ -9,7 +9,7 @@ on:
   pull_request:
     branches: [master]
     paths:
-      - ./server
+      - ./server/**
       - .github/workflows/server-validation.yml
 
 env:
