@@ -68,31 +68,35 @@ export default function ItemsList(): React.ReactElement {
   }, [enqueueSnackbar, setItems]);
 
   const editItem = useCallback(
-    (params: GridRowParams) => {
-      const editedItem = params.row as Item;
+    async (editedItem: Item) => {
+      try {
+        const newItem = await updateItem(editedItem);
 
-      updateItem(editedItem)
-        .then((item) => {
-          setItems((items) => items.map((i) => (i.id === item.id ? item : i)));
-        })
-        .catch((e) =>
-          enqueueSnackbar(`Error updating item: ${stringifyError(e)}`, {
-            persist: true,
-            variant: "error",
-          })
+        setItems((items) =>
+          items.map((i) => (i.id === newItem.id ? newItem : i))
         );
+
+        return newItem;
+      } catch (e) {
+        enqueueSnackbar(`Error updating item: ${stringifyError(e)}`, {
+          persist: true,
+          variant: "error",
+        });
+
+        return editedItem;
+      }
     },
     [enqueueSnackbar, setItems]
   );
 
-  const columns: GridColumns = useMemo(
+  const columns: GridColumns<Item> = useMemo(
     () => [
       {
         field: "status",
         headerName: "",
         width: 50,
         renderCell: (params) => {
-          const item = params.row as Item;
+          const item = params.row;
 
           return item.stock < item.minStock
             ? "🔴"
@@ -113,8 +117,9 @@ export default function ItemsList(): React.ReactElement {
         field: "actions",
         type: "actions",
         width: 150,
-        getActions: (params: GridRowParams) => {
-          const item = params.row as Item;
+        getActions: (params: GridRowParams<Item>) => {
+          const item = params.row;
+
           return [
             <AddStock
               key="add"
@@ -147,8 +152,9 @@ export default function ItemsList(): React.ReactElement {
         field: "maxStock",
         type: "actions",
         width: 75,
-        getActions: (params: GridRowParams) => {
-          const item = params.row as Item;
+        getActions: (params: GridRowParams<Item>) => {
+          const item = params.row;
+
           return [<RemoveItem key="remove" item={item} />];
         },
       },
@@ -176,10 +182,8 @@ export default function ItemsList(): React.ReactElement {
           sortModel={sortModel}
           editMode="row"
           onSortModelChange={setSortModel}
-          onRowEditStop={editItem}
-          onRowEditCommit={() => {
-            console.log("a");
-          }}
+          processRowUpdate={editItem}
+          experimentalFeatures={{ newEditingApi: true }}
         />
       </div>
     </div>
