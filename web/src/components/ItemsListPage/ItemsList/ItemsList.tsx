@@ -11,6 +11,7 @@ import React, { useCallback, useEffect, useMemo, useState } from "react";
 import { createItem, getItems, updateItem } from "../../../api";
 import { stringifyError } from "../../../errors";
 import { Item } from "../../../types/item";
+import RemoveItem from "../actions/RemoveItem";
 import { useItems } from "../contexts/itemsContext";
 import AddStock from "./../actions/AddStock";
 import RemoveStock from "./../actions/RemoveStock";
@@ -142,6 +143,15 @@ export default function ItemsList(): React.ReactElement {
         width: 75,
         editable: true,
       },
+      {
+        field: "maxStock",
+        type: "actions",
+        width: 75,
+        getActions: (params: GridRowParams) => {
+          const item = params.row as Item;
+          return [<RemoveItem key="remove" item={item} />];
+        },
+      },
     ],
     [updateItemStock]
   );
@@ -151,6 +161,7 @@ export default function ItemsList(): React.ReactElement {
       <Fab
         color="primary"
         aria-label="add"
+        title="Add item"
         onClick={addItem}
         disabled={creatingItem}
       >

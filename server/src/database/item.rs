@@ -162,4 +162,35 @@ impl Database {
             stock: row.get("stock"),
         })
     }
+
+    pub async fn remove_item(&self, item_id: i32) -> Result<(), DatabaseError> {
+        let connection = self.pool.get().await?;
+
+        let removed_rows = connection
+            .execute(
+                &connection
+                    .prepare_cached(
+                        r#"
+                            DELETE FROM stock.item
+                            WHERE id = $1
+                        "#,
+                    )
+                    .await?,
+                &[&item_id],
+            )
+            .await
+            .map_err(|e| {
+                DatabaseError(
+                    Kind::Query,
+                    "Error removing item".to_owned(),
+                    Some(Box::new(e)),
+                )
+            })?;
+
+        if removed_rows == 0 {
+            return Err(DatabaseError(Kind::ItemNotFound, "".to_owned(), None));
+        }
+
+        Ok(())
+    }
 }

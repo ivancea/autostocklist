@@ -1,5 +1,6 @@
 import RemoveCircleIcon from "@mui/icons-material/RemoveCircle";
 import {
+  CircularProgress,
   Dialog,
   DialogTitle,
   List,
@@ -24,8 +25,11 @@ export default function RemoveStock({
 }: Props): React.ReactElement {
   const { enqueueSnackbar } = useSnackbar();
   const [openDialog, setOpenDialog] = useState(false);
+  const [working, setWorking] = useState(false);
 
   const handleSelectValue = (value: number) => {
+    setWorking(true);
+
     updateStockLoss(item.id, value)
       .then(onNewStock)
       .catch((e) => {
@@ -34,7 +38,8 @@ export default function RemoveStock({
           variant: "error",
         });
       })
-      .finally(() => setOpenDialog(false));
+      .finally(() => setOpenDialog(false))
+      .finally(() => setWorking(false));
   };
 
   return (
@@ -42,6 +47,7 @@ export default function RemoveStock({
       <GridActionsCellItem
         icon={<RemoveCircleIcon color="warning" />}
         label="Remove stock"
+        title="Remove stock"
         onClick={() => setOpenDialog(true)}
       />
 
@@ -53,21 +59,26 @@ export default function RemoveStock({
             increment stock.
           </div>
         </DialogTitle>
-        <List>
-          {[1, 2, 5, 10, -1, -5].map((value) => (
-            <ListItem
-              key={value}
-              button
-              disabled={item.stock - value < 0}
-              onClick={() => handleSelectValue(value)}
-            >
-              <ListItemText primary={value} />
+
+        {working ? (
+          <CircularProgress />
+        ) : (
+          <List>
+            {[1, 2, 5, 10, -1, -5].map((value) => (
+              <ListItem
+                key={value}
+                button
+                disabled={item.stock - value < 0}
+                onClick={() => handleSelectValue(value)}
+              >
+                <ListItemText primary={value} />
+              </ListItem>
+            ))}
+            <ListItem button onClick={() => setOpenDialog(false)}>
+              <ListItemText primary="Cancel" />
             </ListItem>
-          ))}
-          <ListItem button onClick={() => setOpenDialog(false)}>
-            <ListItemText primary="Cancel" />
-          </ListItem>
-        </List>
+          </List>
+        )}
       </Dialog>
     </>
   );

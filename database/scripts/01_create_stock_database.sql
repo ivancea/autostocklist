@@ -15,6 +15,7 @@ CREATE TABLE stock.loss (
     
     PRIMARY KEY (item_id, date),
     CONSTRAINT fk_item FOREIGN KEY (item_id) REFERENCES stock.item(id)
+        ON DELETE CASCADE ON UPDATE CASCADE
 );
 
 CREATE TABLE stock.resupply (
@@ -24,4 +25,5 @@ CREATE TABLE stock.resupply (
     
     PRIMARY KEY (item_id, date),
     CONSTRAINT fk_item FOREIGN KEY (item_id) REFERENCES stock.item(id)
+        ON DELETE CASCADE ON UPDATE CASCADE
 );

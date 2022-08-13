@@ -74,6 +74,12 @@ export function updateItem(item: Item): Promise<Item> {
   });
 }
 
+export function removeItem(item: Item): Promise<void> {
+  return fetchJson<void>(`${getBackendUrl()}/item/${item.id}`, {
+    method: "DELETE",
+  });
+}
+
 export function updateStockLoss(
   itemId: number,
   quantity: number,

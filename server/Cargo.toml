@@ -8,8 +8,8 @@ license = "MIT"
 
 [dependencies]
 # Web
-actix-web = "^4.0.0-beta.9"
-actix-cors = "^0.6.0-beta.2"
+actix-web = "^4.1.0"
+actix-cors = "^0.6.1"
 
 # Database
 # Connection pool for PostgreSQL

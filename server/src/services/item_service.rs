@@ -38,4 +38,11 @@ impl ItemService {
             .await
             .map_err(|err| err.into())
     }
+
+    pub async fn remove_item(&self, item_id: i32) -> Result<(), ServiceError> {
+        self.database
+            .remove_item(item_id)
+            .await
+            .map_err(|err| err.into())
+    }
 }
