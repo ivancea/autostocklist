@@ -15,7 +15,7 @@ export function isFetchError(error: unknown): error is FetchError {
   );
 }
 
-function fetchJson<T>(url: string, options?: RequestInit): Promise<T> {
+function fetchRaw(url: string, options?: RequestInit): Promise<Response> {
   const mergedOptions = {
     headers: {
       Accept: "application/json",
@@ -25,20 +25,20 @@ function fetchJson<T>(url: string, options?: RequestInit): Promise<T> {
   };
 
   return fetch(url, mergedOptions)
-    .then((response) =>
-      response.json().then((body: unknown) => {
-        if (Math.floor(response.status / 100) !== 2) {
+    .then((response) => {
+      if (Math.floor(response.status / 100) !== 2) {
+        return response.json().then((body: unknown) => {
           const error: FetchError = {
             status: response.status,
             body,
           };
 
           return Promise.reject(error);
-        }
+        });
+      }
 
-        return body as T;
-      })
-    )
+      return response;
+    })
     .catch((e: unknown) => {
       if (isFetchError(e)) {
         return Promise.reject(e);
@@ -51,6 +51,16 @@ function fetchJson<T>(url: string, options?: RequestInit): Promise<T> {
         body: message,
       });
     });
+}
+
+function fetchJson<T>(url: string, options?: RequestInit): Promise<T> {
+  return fetchRaw(url, options).then(
+    (response) => response.json() as Promise<T>
+  );
+}
+
+function fetchEmpty(url: string, options?: RequestInit): Promise<void> {
+  return fetchRaw(url, options).then();
 }
 
 export function getItems(): Promise<Item[]> {
@@ -75,7 +85,7 @@ export function updateItem(item: Item): Promise<Item> {
 }
 
 export function removeItem(item: Item): Promise<void> {
-  return fetchJson<void>(`${getBackendUrl()}/item/${item.id}`, {
+  return fetchEmpty(`${getBackendUrl()}/item/${item.id}`, {
     method: "DELETE",
   });
 }
