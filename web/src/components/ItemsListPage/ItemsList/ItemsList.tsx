@@ -149,7 +149,7 @@ export default function ItemsList(): React.ReactElement {
         editable: true,
       },
       {
-        field: "maxStock",
+        field: "removeItem",
         type: "actions",
         width: 75,
         getActions: (params: GridRowParams<Item>) => {
