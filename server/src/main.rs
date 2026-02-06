@@ -10,7 +10,9 @@ use database::Database;
 use dotenv::dotenv;
 use env_logger::Env;
 use log::info;
-use services::{item_service::ItemService, stock_service::StockService};
+use services::{
+    forecast_service::ForecastService, item_service::ItemService, stock_service::StockService,
+};
 use std::env;
 
 #[actix_web::main]
@@ -22,12 +24,14 @@ async fn main() -> std::io::Result<()> {
     let database = initialize_database().await;
     let item_service = ItemService::new(database.clone());
     let stock_service = StockService::new(database.clone());
+    let forecast_service = ForecastService::new(database.clone());
 
     info!("Starting server");
     HttpServer::new(move || {
         App::new()
             .app_data(web::Data::new(item_service.clone()))
             .app_data(web::Data::new(stock_service.clone()))
+            .app_data(web::Data::new(forecast_service.clone()))
             .wrap(middleware::NormalizePath::trim())
             .wrap(Cors::permissive())
             .wrap(middleware::Logger::default())

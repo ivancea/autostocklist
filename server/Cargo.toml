@@ -3,7 +3,7 @@ name = "autostocklist"
 version = "1.0.0"
 authors = ["Iván Cea Fontenla <ivancea96@outlook.com>"]
 edition = "2021"
-rust-version = "1.56"
+rust-version = "1.93"
 license = "MIT"
 
 [dependencies]
@@ -21,6 +21,9 @@ postgres = { version = "^0", features = ["with-chrono-0_4"] }
 serde = { version = "^1", features = ["derive"] }
 dotenv = "^0"
 env_logger = "^0"
-chrono = "^0"
+chrono = { version = "^0", features = ["serde"] }
 log = "^0"
 itertools = "^0"
+
+[dev-dependencies]
+testcontainers = "0.13.0"

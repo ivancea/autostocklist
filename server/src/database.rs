@@ -1,4 +1,5 @@
 pub mod error;
+pub mod forecast;
 pub mod item;
 pub mod stock;
 
