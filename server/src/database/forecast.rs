@@ -62,6 +62,7 @@ mod tests {
     use chrono::Duration;
     use postgres::{Client, NoTls};
     use std::thread;
+    use std::process::Command;
     use std::time::Duration as StdDuration;
     use testcontainers::{clients::Cli, images::postgres::Postgres};
 
@@ -81,8 +82,21 @@ mod tests {
         panic!("Failed to connect to Postgres: {:?}", last_error);
     }
 
+    fn docker_available() -> bool {
+        Command::new("docker")
+            .arg("version")
+            .output()
+            .map(|output| output.status.success())
+            .unwrap_or(false)
+    }
+
     #[actix_web::test]
     async fn get_item_usage_series_fills_missing_days() {
+        if !docker_available() {
+            eprintln!("Docker not available, skipping integration test.");
+            return;
+        }
+
         let docker = Cli::default();
         let node = docker.run(Postgres::default());
         let port = node.get_host_port(5432);
