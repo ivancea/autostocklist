@@ -85,7 +85,7 @@ mod tests {
     async fn get_item_usage_series_fills_missing_days() {
         let docker = Cli::default();
         let node = docker.run(Postgres::default());
-        let port = node.get_host_port_ipv4(5432);
+        let port = node.get_host_port(5432);
         let conn_str = format!(
             "postgresql://postgres:postgres@127.0.0.1:{}/postgres",
             port
@@ -109,16 +109,18 @@ mod tests {
         let item_id: i32 = item_row.get("id");
 
         let start_date = NaiveDate::from_ymd_opt(2023, 1, 2).expect("valid date");
+        let day_one = start_date + Duration::days(1);
+        let day_four = start_date + Duration::days(4);
         client
             .execute(
                 "INSERT INTO stock.loss (item_id, date, quantity) VALUES ($1, $2, $3)",
-                &[&item_id, &start_date + Duration::days(1), &2],
+                &[&item_id, &day_one, &2],
             )
             .expect("insert loss");
         client
             .execute(
                 "INSERT INTO stock.loss (item_id, date, quantity) VALUES ($1, $2, $3)",
-                &[&item_id, &start_date + Duration::days(4), &4],
+                &[&item_id, &day_four, &4],
             )
             .expect("insert loss");
 
