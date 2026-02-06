@@ -21,6 +21,6 @@ postgres = { version = "^0", features = ["with-chrono-0_4"] }
 serde = { version = "^1", features = ["derive"] }
 dotenv = "^0"
 env_logger = "^0"
-chrono = "^0"
+chrono = { version = "^0", features = ["serde"] }
 log = "^0"
 itertools = "^0"
