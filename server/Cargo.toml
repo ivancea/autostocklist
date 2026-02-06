@@ -24,3 +24,6 @@ env_logger = "^0"
 chrono = { version = "^0", features = ["serde"] }
 log = "^0"
 itertools = "^0"
+
+[dev-dependencies]
+testcontainers = "0.13.0"

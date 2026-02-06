@@ -55,3 +55,87 @@ impl Database {
             .collect())
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use chrono::Duration;
+    use postgres::{Client, NoTls};
+    use std::thread;
+    use std::time::Duration as StdDuration;
+    use testcontainers::{clients::Cli, images::postgres::Postgres};
+
+    fn connect_with_retry(conn_str: &str) -> Client {
+        let mut last_error = None;
+
+        for _ in 0..10 {
+            match Client::connect(conn_str, NoTls) {
+                Ok(client) => return client,
+                Err(error) => {
+                    last_error = Some(error);
+                    thread::sleep(StdDuration::from_millis(500));
+                }
+            }
+        }
+
+        panic!("Failed to connect to Postgres: {:?}", last_error);
+    }
+
+    #[actix_web::test]
+    async fn get_item_usage_series_fills_missing_days() {
+        let docker = Cli::default();
+        let node = docker.run(Postgres::default());
+        let port = node.get_host_port_ipv4(5432);
+        let conn_str = format!(
+            "postgresql://postgres:postgres@127.0.0.1:{}/postgres",
+            port
+        );
+
+        let mut client = connect_with_retry(&conn_str);
+        let schema_sql = include_str!(concat!(
+            env!("CARGO_MANIFEST_DIR"),
+            "/../database/scripts/01_create_stock_database.sql"
+        ));
+        client
+            .batch_execute(schema_sql)
+            .expect("create schema");
+
+        let item_row = client
+            .query_one(
+                "INSERT INTO stock.item (name, min_stock, max_stock, stock) VALUES ($1, $2, $3, $4) RETURNING id",
+                &[&"Test item", &1, &10, &5],
+            )
+            .expect("insert item");
+        let item_id: i32 = item_row.get("id");
+
+        let start_date = NaiveDate::from_ymd_opt(2023, 1, 2).expect("valid date");
+        client
+            .execute(
+                "INSERT INTO stock.loss (item_id, date, quantity) VALUES ($1, $2, $3)",
+                &[&item_id, &start_date + Duration::days(1), &2],
+            )
+            .expect("insert loss");
+        client
+            .execute(
+                "INSERT INTO stock.loss (item_id, date, quantity) VALUES ($1, $2, $3)",
+                &[&item_id, &start_date + Duration::days(4), &4],
+            )
+            .expect("insert loss");
+
+        let database = Database::new("127.0.0.1", port, "postgres", "postgres", "postgres")
+            .await
+            .expect("connect database");
+        let end_date = start_date + Duration::days(6);
+        let usage = database
+            .get_item_usage_series(item_id, start_date, end_date)
+            .await
+            .expect("load usage");
+
+        assert_eq!(usage.len(), 7);
+        assert_eq!(usage[0].date, start_date);
+        assert_eq!(usage[0].usage, 0);
+        assert_eq!(usage[1].usage, 2);
+        assert_eq!(usage[4].usage, 4);
+        assert_eq!(usage[6].usage, 0);
+    }
+}

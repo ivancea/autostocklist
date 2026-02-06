@@ -266,3 +266,66 @@ fn project_min_date(
 fn weekday_index(date: NaiveDate) -> usize {
     date.weekday().num_days_from_monday() as usize
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    fn date(year: i32, month: u32, day: u32) -> NaiveDate {
+        NaiveDate::from_ymd_opt(year, month, day).expect("valid date")
+    }
+
+    #[test]
+    fn select_strategy_uses_history_and_data() {
+        assert!(matches!(
+            select_strategy(10, 0),
+            ForecastStrategy::NoData
+        ));
+        assert!(matches!(
+            select_strategy(10, 5),
+            ForecastStrategy::SimpleAverage
+        ));
+        assert!(matches!(
+            select_strategy(14, 1),
+            ForecastStrategy::WeekdaySeasonality
+        ));
+    }
+
+    #[test]
+    fn weekday_seasonality_uses_weekday_averages() {
+        let start = date(2023, 1, 2); // Monday
+        let mut history = Vec::new();
+
+        for offset in 0..14 {
+            let day = start + Duration::days(offset);
+            let usage = match day.weekday() {
+                chrono::Weekday::Sat | chrono::Weekday::Sun => 5,
+                _ => 1,
+            };
+
+            history.push(DailyUsage { date: day, usage });
+        }
+
+        let weekday_usage = build_weekday_usage(&history, ForecastStrategy::WeekdaySeasonality);
+        let saturday = weekday_usage[weekday_index(date(2023, 1, 7))];
+        let tuesday = weekday_usage[weekday_index(date(2023, 1, 3))];
+
+        assert!((saturday - 5.0).abs() < 1e-6);
+        assert!((tuesday - 1.0).abs() < 1e-6);
+    }
+
+    #[test]
+    fn project_min_date_skips_weekends() {
+        let start_date = date(2023, 1, 6); // Friday
+        let mut weekday_usage = [1.0; 7];
+        weekday_usage[weekday_index(date(2023, 1, 7))] = 0.0;
+        weekday_usage[weekday_index(date(2023, 1, 8))] = 0.0;
+        let average = weekday_usage.iter().sum::<f64>() / 7.0;
+
+        let (days_to_min, min_date) =
+            project_min_date(10, 4, start_date, &weekday_usage, average);
+
+        assert_eq!(days_to_min, Some(10));
+        assert_eq!(min_date, Some(start_date + Duration::days(10)));
+    }
+}
